@@ -114,8 +114,14 @@ class GameGUI(GameCore):
     def __init__(self):
         super(GameGUI, self).__init__()
         self.root = tkinter.Tk()
-        self.cv = tkinter.Canvas(self.root, width=408, height=408, bg="#BAACA0")
-        self.color_set = {
+        self.root.resizable(False, False)
+        self.btn_start = tkinter.Button(self.root, font=("Helvetica", 16), text="start", command=self.start)
+        self.btn_start.grid(row=0, column=0)
+        self.lbl_score = tkinter.Label(self.root, font=("Helvetica", 16), text="Score: 0")
+        self.lbl_score.grid(row=0, column=1)
+        self.cv = tkinter.Canvas(self.root, width=410, height=410, bd=0, bg="#BAACA0")
+        self.cv.grid(row=1, column=0, columnspan=2)
+        self.bg_color = {
             0: "#CCBFB4",
             2: "#EDE3D9",
             4: "#ECDFC8",
@@ -130,29 +136,63 @@ class GameGUI(GameCore):
             2048: "#ECC133",
             4096: "#B884AB",
             8192: "#AF6CA8",
+            16384: "#AB60A6",
+            32768: "#A755A4"
         }
-        self.cv.pack()
-        self.draw_block(0, 0, 2)
-        self.draw_block(0, 1, 4)
-        self.draw_block(0, 2, 8)
-        self.draw_block(0, 3, 16)
-        self.draw_block(1, 0, 32)
-        self.draw_block(1, 1, 64)
-        self.draw_block(1, 2, 128)
-        self.draw_block(1, 3, 256)
-        self.draw_block(2, 0, 512)
-        self.draw_block(2, 1, 1024)
-        self.draw_block(2, 2, 2048)
-        self.draw_block(2, 3, 4096)
-        self.draw_block(3, 0, 8192)
-        self.draw_block(3, 1, 16384)
-        self.draw_block(3, 2, 0)
-        self.draw_block(3, 3, 0)
-
+        self.cv.bind_all("<KeyPress-Up>", self.control)
+        self.cv.bind_all("<KeyPress-Down>", self.control)
+        self.cv.bind_all("<KeyPress-Left>", self.control)
+        self.cv.bind_all("<KeyPress-Right>", self.control)
+        self.start()
         self.root.mainloop()
 
+    @staticmethod
+    def create_arc_rectangle(cv, x, y, l, r=5, outline=None, fill=None):
+        cv.create_rectangle(x, y + r, x + l, y + l - r, outline=outline, fill=fill)
+        cv.create_rectangle(x + r, y, x + l - r, y + l, outline=outline, fill=fill)
+        cv.create_arc(x, y, x + r * 2, y + r * 2, start=90, extent=90, outline=outline, fill=fill)
+        cv.create_arc(x + l - 2 * r, y, x + l, y + r * 2, start=0, extent=90, outline=outline, fill=fill)
+        cv.create_arc(x, y + l - 2 * r, x + r * 2, y + l, start=180, extent=90, outline=outline, fill=fill)
+        cv.create_arc(x + l - 2 * r, y + l - 2 * r, x + l, y + l, start=270, extent=90, outline=outline, fill=fill)
+
+    @staticmethod
+    def create_text(cv, x, y, value):
+        if value <= 4:
+            color = "#766D65"
+        else:
+            color = "#F8F5F1"
+        cv.create_text(x, y, fill=color, font=("Helvetica", 20), text=str(value))
+
     def draw_block(self, x, y, v):
-        self.cv.create_rectangle(x * 100 + 10, y * 100 + 10, x * 100 + 100, y * 100 + 100, fill=self.color_set.get(v, "#EDE3D9"), width=0)
+        GameGUI.create_arc_rectangle(self.cv, x * 100 + 10, y * 100 + 10, 90, r=5, outline=self.bg_color.get(v, "#EDE3D9"), fill=self.bg_color.get(v, "#EDE3D9"))
+        if v > 0:
+            GameGUI.create_text(self.cv, x * 100 + 55, y * 100 + 55, v)
+
+    def start(self):
+        super(GameGUI, self).__init__()
+        self.new_block()
+        self.show()
+
+    def control(self, event):
+        flag = False
+        if event.keysym == "Left":
+            flag = self.move([0, -1, -1, -1])
+        elif event.keysym == "Up":
+            flag = self.move([1, -1, -1, -1])
+        elif event.keysym == "Right":
+            flag = self.move([2, -1, -1, -1])
+        elif event.keysym == "Down":
+            flag = self.move([3, -1, -1, -1])
+        if flag:
+            self.new_block()
+        self.show()
+
+    def show(self):
+        self.lbl_score.configure(text="Score: %d" % self.score)
+        self.cv.delete("all")
+        for i in range(4):
+            for j in range(4):
+                self.draw_block(j, i, self.board[i, j])
 
 
 if __name__ == '__main__':
