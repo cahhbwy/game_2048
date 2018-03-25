@@ -57,27 +57,26 @@ class GameCore:
                 moved, board = self._move(board)
                 if moved:
                     self.board = np.rot90(board, 4)
-                    return True
+                    return 0
             elif c == 1:
                 board = np.rot90(self.board, 1)
                 moved, board = self._move(board)
                 if moved:
                     self.board = np.rot90(board, 3)
-                    return True
+                    return 1
             elif c == 2:
                 board = np.rot90(self.board, 2)
                 moved, board = self._move(board)
                 if moved:
                     self.board = np.rot90(board, 2)
-                    return True
+                    return 2
             elif c == 3:
                 board = np.rot90(self.board, 3)
                 moved, board = self._move(board)
                 if moved:
                     self.board = np.rot90(board, 1)
-                    return True
-            else:
-                return False
+                    return 3
+        return -1
 
     def show(self):
         for i in self.board:
@@ -92,7 +91,7 @@ class GameCore:
     def alive(self):
         score = self.score
         board = self.board.copy()
-        if self.move([0, 1, 2, 3]):
+        if self.move([0, 1, 2, 3]) >= 0:
             self.score = score
             self.board = board
             return True
@@ -105,7 +104,7 @@ class GameCore:
         while self.alive():
             self.show()
             op = input()
-            if self.move([ct.get(op, -1), -1, -1, -1]):
+            if self.move([ct.get(op, -1), -1, -1, -1]) >= 0:
                 self.new_block()
         self.show()
 
@@ -164,7 +163,8 @@ class GameGUI(GameCore):
         cv.create_text(x, y, fill=color, font=("Helvetica", 20), text=str(value))
 
     def draw_block(self, x, y, v):
-        GameGUI.create_arc_rectangle(self.cv, x * 100 + 10, y * 100 + 10, 90, r=5, outline=self.bg_color.get(v, "#EDE3D9"), fill=self.bg_color.get(v, "#EDE3D9"))
+        GameGUI.create_arc_rectangle(self.cv, x * 100 + 10, y * 100 + 10, 90, r=5,
+                                     outline=self.bg_color.get(v, "#EDE3D9"), fill=self.bg_color.get(v, "#EDE3D9"))
         if v > 0:
             GameGUI.create_text(self.cv, x * 100 + 55, y * 100 + 55, v)
 
@@ -183,7 +183,7 @@ class GameGUI(GameCore):
             flag = self.move([2, -1, -1, -1])
         elif event.keysym == "Down":
             flag = self.move([3, -1, -1, -1])
-        if flag:
+        if flag >= 0:
             self.new_block()
         self.show()
 
