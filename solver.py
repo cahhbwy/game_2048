@@ -10,8 +10,8 @@ import numpy as np
 def model():
     x = tf.placeholder(tf.float32, [None, 16])
     y = tf.placeholder(tf.float32, [None, 4])
-    h_1 = tflayers.fully_connected(x, 48)
-    h_2 = tflayers.fully_connected(h_1, 16)
+    h_1 = tflayers.fully_connected(x, 256, tf.nn.leaky_relu)
+    h_2 = tflayers.fully_connected(h_1, 64, tf.nn.leaky_relu)
     out = tflayers.fully_connected(h_2, 4)
     loss = tf.losses.mean_squared_error(y, out)
     return x, y, out, loss
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     epsilon = 1
     num_explore = 100000
     data_size = 30000
-    epochs = 500000000
+    epochs = 50000000
     max_score = 0
     m_x, m_y, m_out, m_loss = model()
     op = tf.train.AdamOptimizer(learning_rate).minimize(m_loss)
@@ -73,5 +73,5 @@ if __name__ == '__main__':
             v_out = sess.run(m_out, feed_dict={m_x: next_boards})
             v_y = np.add(rewards, discount * np.max(v_out, axis=1).reshape(v_out.shape[0], 1))
             sess.run(op, feed_dict={m_x: curr_boards, m_y: v_y})
-        if step % 10000 == 0:
+        if step % 100000 == 0:
             saver.save(sess, "./models/model.ckpt", global_step=step)
