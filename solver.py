@@ -34,7 +34,7 @@ def model_2():
     return x, y, out, loss
 
 
-model = model_1
+model = model_2
 
 
 def normalize(x):
@@ -45,9 +45,9 @@ def normalize(x):
 
 if __name__ == '__main__':
     batch_size = 256
-    learning_rate = 1e-4
+    learning_rate = 1e-6
     discount = 0.9
-    data_size = 30000
+    data_size = 10000
     epochs = 50000000
     max_score = 0
     m_x, m_y, m_out, m_loss = model()
@@ -70,8 +70,11 @@ if __name__ == '__main__':
             action = [i[0] for i in sorted(enumerate(v_out[0]), key=lambda x: x[1], reverse=True)]
         index = game.move(action)
         next_board = normalize(game.board)
-        # reward = np.log2(max(game.score - curr_score, 1)) + (16 - np.count_nonzero(game.board))
-        reward = 16 - np.count_nonzero(game.board)
+        if game.alive():
+            reward = np.log2(max(game.score - curr_score, 1)) + (16 - np.count_nonzero(game.board))
+            # reward = 16 - np.count_nonzero(game.board)
+        else:
+            reward = -20
         reward_vec = np.zeros(4)
         if index >= 0:
             reward_vec[index] = reward

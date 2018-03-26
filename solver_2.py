@@ -12,16 +12,17 @@ def model_1():
     action_oh = tf.placeholder(tf.float32, [None, 4])
     reward_sq = tf.placeholder(tf.float32, [None])
     h_1 = tflayers.fully_connected(status, 256, tf.nn.leaky_relu)
-    h_2 = tflayers.fully_connected(h_1, 256, tf.nn.leaky_relu)
+    h_2 = tflayers.fully_connected(h_1, 64, tf.nn.leaky_relu)
     out = tflayers.fully_connected(h_2, 4)
     loss = tf.losses.mean_squared_error(reward_sq, tf.reduce_sum(action_oh * out, 1))
     return status, action_oh, reward_sq, out, loss
 
 
 def model_2():
-    x = tf.placeholder(tf.float32, [None, 16])
-    y = tf.placeholder(tf.float32, [None, 4])
-    h_0 = tf.reshape(x, [-1, 4, 4, 1])
+    status = tf.placeholder(tf.float32, [None, 16])
+    action_oh = tf.placeholder(tf.float32, [None, 4])
+    reward_sq = tf.placeholder(tf.float32, [None])
+    h_0 = tf.reshape(status, [-1, 4, 4, 1])
     h_1 = tf.concat([h_0, tf.transpose(h_0, [0, 2, 1, 3])], 1)
     h_2a = tflayers.conv2d(h_1, 8, (1, 1), 1, "VALID", activation_fn=tf.nn.leaky_relu)
     h_2b = tflayers.conv2d(h_1, 8, (1, 2), 1, "VALID", activation_fn=tf.nn.leaky_relu)
@@ -31,8 +32,8 @@ def model_2():
     h_3 = tflayers.conv2d(h_2, 16, (1, 10), 1, "VALID", activation_fn=tf.nn.leaky_relu)
     h_4 = tflayers.fully_connected(tf.reshape(h_3, [-1, 128]), 64, tf.nn.leaky_relu)
     out = tflayers.fully_connected(h_4, 4)
-    loss = tf.losses.mean_squared_error(y, out)
-    return x, y, out, loss
+    loss = tf.losses.mean_squared_error(reward_sq, tf.reduce_sum(action_oh * out, 1))
+    return status, action_oh, reward_sq, out, loss
 
 
 model = model_1
@@ -46,9 +47,9 @@ def normalize(x):
 
 if __name__ == '__main__':
     batch_size = 256
-    learning_rate = 1e-5
+    learning_rate = 1e-6
     discount = 0.9
-    data_size = 30000
+    data_size = 10000
     epochs = 50000000
     max_score = 0
     m_status, m_action_oh, m_reward_sq, m_out, m_loss = model()
@@ -71,8 +72,11 @@ if __name__ == '__main__':
             action = [i[0] for i in sorted(enumerate(v_out[0]), key=lambda x: x[1], reverse=True)]
         index = game.move(action)
         next_board = normalize(game.board)
-        reward = np.log2(max(game.score - curr_score, 1)) + (16 - np.count_nonzero(game.board))
-        # reward = 16 - np.count_nonzero(game.board)
+        if game.alive():
+            reward = np.log2(max(game.score - curr_score, 1)) + (16 - np.count_nonzero(game.board))
+            # reward = 16 - np.count_nonzero(game.board)
+        else:
+            reward = -30
         action_oh = np.zeros(4)
         if index >= 0:
             action_oh[index] = 1.0
