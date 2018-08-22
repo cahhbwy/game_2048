@@ -59,6 +59,7 @@ if __name__ == '__main__':
             if step > data_size:
                 print("step=%8d, max_score=%d" % (step, max_score))
                 game.show()
+            reward[index] = -1000.
             max_score = max(max_score, game.score)
             game.__init__()
         game.new_block()
